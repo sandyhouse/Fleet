@@ -161,7 +161,9 @@ class ResNet_ARCFACE():
         if act == 'prelu':
             bn = fluid.layers.batch_norm(input=conv, act=None, epsilon=2e-05,
                 momentum=0.9)
-            return fluid.layers.leaky_relu(x=bn, alpha=0.25)
+            return fluid.layers.prelu(bn, mode="all",
+                param_attr=fluid.param_attr.ParamAttr(
+                    initializer=fluid.initializer.Constant(0.25)))
         else:
             return fluid.layers.batch_norm(input=conv, act=act, epsilon=2e-05)
 

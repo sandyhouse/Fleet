@@ -209,7 +209,7 @@ def train(args):
                             _data = []
                             for k in xrange(end - args.test_batch_size, end):
                                 _data.append((data[k], 0))
-                            [_embeddings, acc1, acc5] = exe.run(test_program, 
+                            [_embeddings, acc1, acc5] = exe.run(test_program,
                                 fetch_list = fetch_list_test, feed=feeder.feed(_data),
                                 use_program_cache=True)
                             if embeddings is None:
@@ -241,11 +241,12 @@ def train(args):
 
         #save model
         #if trainer_id == 0:
-        model_path = os.path.join(model_save_dir + '/' + model_name,
-                              str(pass_id), str(trainer_id))
-        if not os.path.isdir(model_path):
-            os.makedirs(model_path)
-        fluid.io.save_persistables(exe, model_path)
+        if model_save_dir:
+            model_path = os.path.join(model_save_dir + '/' + model_name,
+                                  str(pass_id), str(trainer_id))
+            if not os.path.isdir(model_path):
+                os.makedirs(model_path)
+            fluid.io.save_persistables(exe, model_path)
         
 def main():
     global args
