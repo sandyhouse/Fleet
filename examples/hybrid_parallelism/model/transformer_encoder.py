@@ -24,7 +24,6 @@ import paddle.fluid as fluid
 import paddle.fluid.layers as layers
 import numpy as np
 
-
 def gelu(x):
   """Gaussian Error Linear Unit.
 
@@ -161,7 +160,7 @@ def multi_head_attention(queries,
         Scaled Dot-Product Attention
         """
         scaled_q = layers.scale(x=q, scale=d_key**-0.5)
-        product = layers.matmul(x=scaled_q, y=k, transpose_y=True)
+        product = paddle.matmul(x=scaled_q, y=k, transpose_y=True)
         if attn_bias:
             product += attn_bias
         weights = layers.softmax(product)
@@ -171,7 +170,7 @@ def multi_head_attention(queries,
                 dropout_prob=dropout_rate,
                 dropout_implementation="upscale_in_train",
                 is_test=False)
-        out = layers.matmul(weights, v)
+        out = paddle.matmul(weights, v)
         return out
 
     if topo.mp.size > 1:
@@ -568,7 +567,8 @@ def encoder(enc_input,
             name='',
             param_share=None,
             topo=None,
-            preln=False):
+            preln=False,
+            device="gpu"):
     """
     The encoder is composed of a stack of identical layers returned by calling
     encoder_layer .
@@ -598,7 +598,7 @@ def encoder(enc_input,
     layer_per_stage = n_layer // topo.pp.size
 
     for i in range(n_layer // n_layer_per_block):
-        with fluid.device_guard(f'gpu:{i//layer_per_stage}'):
+        with fluid.device_guard(f'{device}:{i//layer_per_stage}'):
             #attn_bias.stop_gradient = True
             #attn_bias.persistable = True
             enc_output, cp = enc_fn(
@@ -626,7 +626,7 @@ def encoder(enc_input,
             enc_input = enc_output
 
     if preln:
-        with fluid.device_guard(f'gpu:{topo.pp.size-1}'):
+        with fluid.device_guard(f'{device}:{topo.pp.size-1}'):
             enc_output = post_process_layer(
                 None,
                 enc_output,
@@ -634,7 +634,7 @@ def encoder(enc_input,
                 prepostprocess_dropout,
                 name='post_encoder',
                 epsilon=epsilon)
-    with fluid.device_guard(f'gpu:{topo.pp.size-1}'):
+    with fluid.device_guard(f'{device}:{topo.pp.size-1}'):
         enc_output = pre_process_layer(
             enc_output,
             preprocess_cmd,
